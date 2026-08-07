@@ -1,0 +1,23 @@
+{
+  "name": "rubik",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "deploy": "turbo run deploy",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "strip-comments": "node scripts/strip-comments.mjs",
+    "check-types": "turbo run check-types",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.10.8",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

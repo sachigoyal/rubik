@@ -1,0 +1,28 @@
+{
+  "name": "@repo/api",
+  "type": "module",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "mkdir -p ../web/dist && wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "secrets": "wrangler secret bulk .prod.vars",
+    "check-types": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
+  },
+  "exports": {
+    "./trpc": "./src/trpc/router.ts"
+  },
+  "dependencies": {
+    "@hono/trpc-server": "^0.4.2",
+    "@repo/db": "workspace:*",
+    "@trpc/server": "^11.18.0",
+    "better-auth": "^1.7.1",
+    "hono": "^4.13.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "wrangler": "^4.110.0"
+  }
+}

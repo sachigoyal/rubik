@@ -1,0 +1,49 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rubik",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/trpc/*", "/api/*"],
+  },
+  "routes": [{ "pattern": "rubik.sachi.dev", "custom_domain": true }],
+  "workers_dev": false,
+  // Production values. `wrangler dev` overrides these from .dev.vars.
+  "vars": {
+    "APP_URL": "https://rubik.sachi.dev",
+    "BETTER_AUTH_URL": "https://rubik.sachi.dev",
+    "EMAIL_FROM": "no-reply@rubik.sachi.dev",
+  },
+  // `remote: true` proxies local `wrangler dev` sends to the real service, so
+  // verification mail works in development.
+  "send_email": [{ "name": "EMAIL", "remote": true }],
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  //   }
+  // ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "my-bucket"
+  //   }
+  // ],
+  // "d1_databases": [
+  //   {
+  //     "binding": "MY_DB",
+  //     "database_name": "my-database",
+  //     "database_id": ""
+  //   }
+  // ],
+  // "ai": {
+  //   "binding": "AI"
+  // },
+  // "observability": {
+  //   "enabled": true,
+  //   "head_sampling_rate": 1
+  // }
+}

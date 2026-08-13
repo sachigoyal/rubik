@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Rubik">
+  <style>
+    .f { fill: #1313BA; }
+    @media (prefers-color-scheme: dark) { .f { fill: #3B3BDD; } }
+  </style>
+  <g class="f" fill="#1313BA">
+    <path d="M16 1.8 L27.1 8.21 L16 14.61 L4.9 8.21 Z" />
+    <path d="M17.2 16.69 L28.3 10.29 L28.3 23.1 L17.2 29.51 Z" />
+    <path d="M3.7 10.29 L14.8 16.69 L14.8 29.51 L3.7 23.1 Z" />
+  </g>
+</svg>

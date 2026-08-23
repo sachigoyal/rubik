@@ -1,41 +1,41 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
-import { Checkbox } from "@repo/ui/components/checkbox";
-import { Loader2Icon, Trash2Icon } from "lucide-react";
-import { authClient } from "@/lib/auth";
-import { useTRPC } from "@/lib/trpc";
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import { Button } from "@repo/ui/components/button"
+import { Input } from "@repo/ui/components/input"
+import { Checkbox } from "@repo/ui/components/checkbox"
+import { Loader2Icon, Trash2Icon } from "lucide-react"
+import { authClient } from "@/lib/auth"
+import { useTRPC } from "@/lib/trpc"
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
-    const { data } = await authClient.getSession();
-    if (!data) throw redirect({ to: "/login" });
+    const { data } = await authClient.getSession()
+    if (!data) throw redirect({ to: "/login" })
   },
   component: Todos,
-});
+})
 
 function Todos() {
-  const trpc = useTRPC();
-  const navigate = useNavigate();
-  const [text, setText] = useState("");
-  const queryClient = useQueryClient();
+  const trpc = useTRPC()
+  const navigate = useNavigate()
+  const [text, setText] = useState("")
+  const queryClient = useQueryClient()
 
   const invalidateTodos = () => {
-    queryClient.invalidateQueries({ queryKey: trpc.todos.list.queryKey() });
-  };
+    queryClient.invalidateQueries({ queryKey: trpc.todos.list.queryKey() })
+  }
 
-  const todos = useQuery(trpc.todos.list.queryOptions());
+  const todos = useQuery(trpc.todos.list.queryOptions())
   const add = useMutation(
     trpc.todos.add.mutationOptions({ onSuccess: invalidateTodos }),
-  );
+  )
   const toggle = useMutation(
     trpc.todos.toggle.mutationOptions({ onSuccess: invalidateTodos }),
-  );
+  )
   const remove = useMutation(
     trpc.todos.remove.mutationOptions({ onSuccess: invalidateTodos }),
-  );
+  )
 
   return (
     <div className="mx-auto flex min-h-svh max-w-md flex-col items-center justify-center gap-4 p-8">
@@ -45,8 +45,8 @@ function Todos() {
           variant="ghost"
           className="cursor-pointer"
           onClick={async () => {
-            await authClient.signOut();
-            navigate({ to: "/login" });
+            await authClient.signOut()
+            navigate({ to: "/login" })
           }}
         >
           Sign out
@@ -56,10 +56,10 @@ function Todos() {
       <form
         className="flex w-full gap-2"
         onSubmit={(e) => {
-          e.preventDefault();
-          if (!text.trim()) return;
-          add.mutate({ text });
-          setText("");
+          e.preventDefault()
+          if (!text.trim()) return
+          add.mutate({ text })
+          setText("")
         }}
       >
         <Input
@@ -107,5 +107,5 @@ function Todos() {
         ))}
       </ul>
     </div>
-  );
+  )
 }

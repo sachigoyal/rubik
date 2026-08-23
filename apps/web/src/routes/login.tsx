@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/login")({
-    component: Login,
+  component: Login,
 })
 
 function Login() {
-    return <div>Login</div>
+  return <div>Login</div>
 }

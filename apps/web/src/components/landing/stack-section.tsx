@@ -19,6 +19,7 @@ import {
   siTrpc,
   siVite,
 } from "simple-icons"
+import { ArrowUpRight } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { BAYER } from "./dither-field"
 import { Reveal } from "./reveal"
@@ -27,6 +28,7 @@ import { useInView } from "./use-in-view"
 const TECHS = [
   {
     name: "Hono",
+    href: "https://hono.dev",
     role: "Framework",
     note: "Routing on V8 isolates",
     ink: "text-hono",
@@ -35,6 +37,7 @@ const TECHS = [
   },
   {
     name: "Cloudflare Workers",
+    href: "https://developers.cloudflare.com/workers",
     role: "Runtime",
     note: "Compute at the edge",
     ink: "text-cloudflare",
@@ -43,6 +46,7 @@ const TECHS = [
   },
   {
     name: "tRPC",
+    href: "https://trpc.io",
     role: "API",
     note: "End-to-end types, no codegen",
     ink: "text-trpc",
@@ -51,6 +55,7 @@ const TECHS = [
   },
   {
     name: "Neon",
+    href: "https://neon.com",
     role: "Database",
     note: "Serverless Postgres",
     ink: "text-neon",
@@ -59,6 +64,7 @@ const TECHS = [
   },
   {
     name: "Drizzle",
+    href: "https://orm.drizzle.team",
     role: "ORM",
     note: "Schema as TypeScript",
     ink: "text-drizzle",
@@ -67,6 +73,7 @@ const TECHS = [
   },
   {
     name: "better-auth",
+    href: "https://www.better-auth.com",
     role: "Auth",
     note: "Email, GitHub, and Google",
     ink: "text-betterauth",
@@ -75,6 +82,7 @@ const TECHS = [
   },
   {
     name: "React 19",
+    href: "https://react.dev",
     role: "Frontend",
     note: "With the React Compiler",
     ink: "text-react",
@@ -83,6 +91,7 @@ const TECHS = [
   },
   {
     name: "TanStack",
+    href: "https://tanstack.com",
     role: "Routing and data",
     note: "Router and Query",
     ink: "text-tanstack",
@@ -91,6 +100,7 @@ const TECHS = [
   },
   {
     name: "Tailwind v4",
+    href: "https://tailwindcss.com",
     role: "UI",
     note: "Design tokens in CSS",
     ink: "text-tailwind",
@@ -99,6 +109,7 @@ const TECHS = [
   },
   {
     name: "Vite",
+    href: "https://vite.dev",
     role: "Tooling",
     note: "Dev server and build",
     ink: "text-vite",
@@ -108,12 +119,17 @@ const TECHS = [
 ] as const
 
 const GRAIN = 3
-const BASE = 0.8
+const FIELD = 0.6
+const GHOST = 0.5
+const COLLAPSE = 0.35
+const ANCHOR = 0.45
 const LOGO = 0.9
 const DURATION = 550
 const OMEGA = 6600 / DURATION
 const STAGGER = 0.35
 const DWELL = 1200
+
+const STEPS = 24
 
 const ease = (t: number) => t * t * (3 - 2 * t)
 
@@ -141,7 +157,8 @@ function CardDither({
 
     let image: ImageData | null = null
     let pixels: Uint32Array | null = null
-    let inkPixel = 0
+    const inks = new Uint32Array(STEPS + 1)
+    let fieldInk = 0
     const littleEndian = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1
 
     const probe = document.createElement("canvas")
@@ -150,14 +167,9 @@ function CardDither({
 
     let logo: Float32Array | null = null
     let particles: Float32Array | null = null
-    let shape: Float32Array | null = null
+    let inner = 0
     let gridKey = ""
-    const rebuild = (
-      columns: number,
-      rows: number,
-      dpr: number,
-      height: number,
-    ) => {
+    const rebuild = (columns: number, rows: number, dpr: number) => {
       const key = `${columns}x${rows}@${dpr}`
       if (gridKey === key) return
       gridKey = key
@@ -169,6 +181,7 @@ function CardDither({
       const scaled = sampler.getContext("2d", { willReadFrequently: true })
       if (!scaled) return
       const side = Math.min(columns, rows) * 0.62
+      inner = side / 2
       const scale = side / 24
       scaled.setTransform(
         scale,
@@ -176,23 +189,12 @@ function CardDither({
         0,
         scale,
         (columns - side) / 2,
-        rows * 0.42 - side / 2,
+        rows * ANCHOR - side / 2,
       )
       scaled.fill(new Path2D(icon))
       const { data } = scaled.getImageData(0, 0, columns, rows)
       for (let index = 0; index < logo.length; index++) {
-        logo[index] = (data[index * 4 + 3]! / 255) * LOGO
-      }
-
-      shape = new Float32Array(rows)
-      const bandCdf = new Float32Array(rows)
-      let total = 0
-      for (let row = 0; row < rows; row++) {
-        const depth = 1 - ((row + 0.5) * GRAIN) / height
-        const weight = Math.pow(depth, 1.6) * (1 - Math.pow(depth, 8))
-        shape[row] = weight
-        total += weight
-        bandCdf[row] = total
+        logo[index] = data[index * 4 + 3]! / 255
       }
 
       const cell = GRAIN * dpr
@@ -201,13 +203,10 @@ function CardDither({
         const thresholdRow = (row & 7) * 8
         for (let column = 0; column < columns; column++) {
           const threshold = THRESHOLDS[thresholdRow + (column & 7)]!
-          if (logo[row * columns + column]! <= threshold) continue
-          const pick = Math.random() * total
-          let from = 0
-          while (from < rows - 1 && bandCdf[from]! < pick) from++
+          if (logo[row * columns + column]! * LOGO <= threshold) continue
           found.push(
             Math.random() * columns * cell,
-            (from + 0.5) * cell,
+            Math.random() * rows * cell,
             (column + 0.5) * cell,
             (row + 0.5) * cell,
             Math.random() * STAGGER,
@@ -223,9 +222,14 @@ function CardDither({
       probeContext.fillStyle = getComputedStyle(canvas).color
       probeContext.fillRect(0, 0, 1, 1)
       const [r, g, b, a] = probeContext.getImageData(0, 0, 1, 1).data
-      inkPixel = littleEndian
-        ? ((a! << 24) | (b! << 16) | (g! << 8) | r!) >>> 0
-        : ((r! << 24) | (g! << 16) | (b! << 8) | a!) >>> 0
+      const pack = (alpha: number) =>
+        littleEndian
+          ? ((alpha << 24) | (b! << 16) | (g! << 8) | r!) >>> 0
+          : ((r! << 24) | (g! << 16) | (b! << 8) | alpha) >>> 0
+      for (let step = 0; step <= STEPS; step++) {
+        inks[step] = pack(Math.round((a! * step) / STEPS))
+      }
+      fieldInk = pack(Math.round(a! * GHOST))
     }
 
     const paint = (level: number) => {
@@ -249,33 +253,39 @@ function CardDither({
 
       const columns = Math.ceil(width / GRAIN)
       const rows = Math.ceil(height / GRAIN)
-      rebuild(columns, rows, dpr, height)
+      rebuild(columns, rows, dpr)
 
-      const fade = (1 - level) * BASE
-      if (fade > 0.005 && shape) {
+      const mask = logo
+      if (level < 1 && mask) {
+        const centreColumn = columns / 2
+        const centreRow = rows * ANCHOR
+        const span =
+          Math.hypot(
+            Math.max(centreColumn, columns - centreColumn),
+            Math.max(centreRow, rows - centreRow),
+          ) - inner
+        const wave = level * (1 + COLLAPSE)
+        const size = Math.max(1, Math.round((GRAIN - 1) * dpr))
         for (let row = 0; row < rows; row++) {
-          const band = fade * shape[row]!
-          if (band <= 0.008) continue
-
-          const local = band > 0.6 ? 1 : band / 0.6
-          const size = Math.max(
-            1,
-            Math.round((GRAIN - 1) * (0.5 + 0.5 * local) * dpr),
-          )
-          const edge = ((GRAIN - 1) * dpr - size) / 2
-          const top = Math.round(edge + row * GRAIN * dpr)
-          const bottom = Math.min(top + size, deviceHeight)
           const thresholdRow = (row & 7) * 8
-
+          const dy = row + 0.5 - centreRow
+          const top = Math.round(row * GRAIN * dpr)
+          const bottom = Math.min(top + size, deviceHeight)
           for (let column = 0; column < columns; column++) {
-            const threshold = THRESHOLDS[thresholdRow + (column & 7)]!
-            if (band <= threshold) continue
+            const hole = 1 - mask[row * columns + column]!
+            if (hole <= 0) continue
+            const dx = column + 0.5 - centreColumn
+            const away = (Math.sqrt(dx * dx + dy * dy) - inner) / span
+            const reach = 1 - Math.min(Math.max(away, 0), 1)
+            const fade = 1 - Math.min(Math.max((wave - reach) / COLLAPSE, 0), 1)
+            const density = FIELD * hole * fade
+            if (density <= THRESHOLDS[thresholdRow + (column & 7)]!) continue
 
-            const left = Math.round(edge + column * GRAIN * dpr)
+            const left = Math.round(column * GRAIN * dpr)
             const right = Math.min(left + size, deviceWidth)
             for (let y = top; y < bottom; y++) {
               const start = y * deviceWidth + left
-              pixels!.fill(inkPixel, start, start + (right - left))
+              pixels!.fill(fieldInk, start, start + (right - left))
             }
           }
         }
@@ -289,13 +299,14 @@ function CardDither({
           )
           if (along <= 0) continue
           const eased = ease(along)
+          const ink = inks[Math.round(eased * STEPS)]!
           const sx = particles[index]!
           const sy = particles[index + 1]!
           const x = sx + (particles[index + 2]! - sx) * eased
           const y = sy + (particles[index + 3]! - sy) * eased
           const size = Math.max(
             1,
-            Math.round((GRAIN - 1) * dpr * (0.55 + 0.45 * eased)),
+            Math.round((GRAIN - 1) * dpr * (0.7 + 0.3 * eased)),
           )
           const left = Math.max(0, Math.round(x - size / 2))
           const right = Math.min(left + size, deviceWidth)
@@ -303,7 +314,7 @@ function CardDither({
           const bottom = Math.min(top + size, deviceHeight)
           for (let py = top; py < bottom; py++) {
             const start = py * deviceWidth + left
-            pixels!.fill(inkPixel, start, start + (right - left))
+            pixels!.fill(ink, start, start + (right - left))
           }
         }
       }
@@ -379,19 +390,31 @@ function TechCard({
   return (
     <li className="-ml-px flex-none first:ml-0">
       <Reveal shown={shown} delay={delay} className="h-full">
-        <div
+        <a
+          href={tech.href}
+          target="_blank"
+          rel="noreferrer"
           data-tech={index}
           data-raised={raised ? "" : undefined}
-          className="group bg-background relative flex h-[min(62svh,36rem)] w-[min(88vw,32rem)] flex-col overflow-hidden border p-8"
+          className="group focus-visible:ring-ring/50 bg-background data-[raised]:border-foreground/30 relative flex h-[min(62svh,36rem)] w-[min(88vw,32rem)] flex-col overflow-hidden border p-8 outline-none transition-colors duration-300 focus-visible:ring-3"
         >
           <CardDither
             icon={tech.icon}
             raised={raised}
             className={cn("absolute inset-0 size-full", tech.ink)}
           />
-          <span className="text-muted-foreground relative font-mono text-xs">
-            {tech.role}
-          </span>
+          <div className="relative flex items-start justify-between gap-4">
+            <span className="text-muted-foreground font-mono text-xs">
+              {tech.role}
+            </span>
+            <ArrowUpRight
+              aria-hidden
+              className={cn(
+                "text-muted-foreground/50 size-4 transition-[color,transform] duration-300 group-data-[raised]:-translate-y-0.5 group-data-[raised]:translate-x-0.5",
+                tech.accent,
+              )}
+            />
+          </div>
           <div className="relative mt-auto">
             <h3
               className={cn(
@@ -403,7 +426,7 @@ function TechCard({
             </h3>
             <p className="text-muted-foreground mt-2 text-sm">{tech.note}</p>
           </div>
-        </div>
+        </a>
       </Reveal>
     </li>
   )
@@ -416,6 +439,7 @@ export function StackSection() {
   const { ref: viewRef, shown } = useInView<HTMLDivElement>()
   const travelRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState(-1)
+  const [focused, setFocused] = useState(-1)
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -459,6 +483,24 @@ export function StackSection() {
     observer.observe(track)
     return () => observer.disconnect()
   }, [still, travel])
+
+  const centre = (index: number) => {
+    const section = sectionRef.current
+    const track = trackRef.current
+    const distance = travel.get()
+    if (!section || !track || still || distance <= 0) return
+    const card = track.children[index] as HTMLElement | undefined
+    if (!card) return
+    const offset = card.offsetLeft + card.offsetWidth / 2
+    const seen = Math.min(
+      Math.max((offset - section.clientWidth / 2) / distance, 0),
+      1,
+    )
+    const span = section.offsetHeight - window.innerHeight
+    const reach = (seen * distance + DWELL) / (distance + 2 * DWELL)
+    const top = section.getBoundingClientRect().top + window.scrollY
+    window.scrollTo({ top: top + reach * span })
+  }
 
   useEffect(() => {
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return
@@ -517,6 +559,11 @@ export function StackSection() {
     <section ref={sectionRef} className="relative border-t">
       <div
         ref={viewRef}
+        onScroll={(event) => {
+          if (event.target !== event.currentTarget) return
+          event.currentTarget.scrollLeft = 0
+          event.currentTarget.scrollTop = 0
+        }}
         className={cn(
           "flex flex-col gap-10",
           still
@@ -542,6 +589,14 @@ export function StackSection() {
 
         <motion.ul
           ref={trackRef}
+          onFocus={(event) => {
+            const card = event.target.closest<HTMLElement>("[data-tech]")
+            if (!card || !card.matches(":focus-visible")) return
+            const index = Number(card.dataset.tech)
+            setFocused(index)
+            centre(index)
+          }}
+          onBlur={() => setFocused(-1)}
           style={still ? undefined : { x: glide }}
           className={cn(
             "flex px-6 sm:px-10 lg:px-14",
@@ -553,7 +608,7 @@ export function StackSection() {
               key={tech.name}
               tech={tech}
               index={index}
-              raised={hovered === index}
+              raised={hovered === index || focused === index}
               shown={shown}
               delay={100 + index * 60}
             />

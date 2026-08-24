@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Rubik">
   <style>
     .f { fill: #1313BA; }
-    @media (prefers-color-scheme: dark) { .f { fill: #3B3BDD; } }
+    @media (prefers-color-scheme: dark) { .f { fill: #A9B4FF; } }
   </style>
   <g class="f" fill="#1313BA">
     <path d="M16 1.8 L27.1 8.21 L16 14.61 L4.9 8.21 Z" />
